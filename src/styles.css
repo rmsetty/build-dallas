@@ -42,37 +42,37 @@
 
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.985 0.006 95);
-  --foreground: oklch(0.19 0.03 258);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.19 0.03 258);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.19 0.03 258);
-  --primary: oklch(0.52 0.16 254);
-  --primary-foreground: oklch(0.99 0.005 250);
-  --secondary: oklch(0.955 0.012 250);
-  --secondary-foreground: oklch(0.24 0.035 258);
-  --muted: oklch(0.955 0.01 250);
-  --muted-foreground: oklch(0.52 0.025 258);
-  --accent: oklch(0.94 0.03 250);
-  --accent-foreground: oklch(0.24 0.035 258);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.9 0.012 255);
-  --input: oklch(0.9 0.012 255);
-  --ring: oklch(0.52 0.16 254);
+  --background: oklch(0.16 0.02 260);
+  --foreground: oklch(0.97 0.005 250);
+  --card: oklch(0.21 0.024 260);
+  --card-foreground: oklch(0.97 0.005 250);
+  --popover: oklch(0.21 0.024 260);
+  --popover-foreground: oklch(0.97 0.005 250);
+  --primary: oklch(0.66 0.19 258);
+  --primary-foreground: oklch(0.14 0.02 260);
+  --secondary: oklch(0.24 0.025 260);
+  --secondary-foreground: oklch(0.96 0.006 250);
+  --muted: oklch(0.24 0.025 260);
+  --muted-foreground: oklch(0.72 0.02 258);
+  --accent: oklch(0.28 0.035 258);
+  --accent-foreground: oklch(0.97 0.005 250);
+  --destructive: oklch(0.62 0.21 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.32 0.025 260);
+  --input: oklch(0.32 0.025 260);
+  --ring: oklch(0.66 0.19 258);
 
-  --ink: oklch(0.19 0.035 258);
-  --ink-foreground: oklch(0.97 0.008 250);
-  --ember: oklch(0.68 0.17 47);
-  --ember-foreground: oklch(0.18 0.03 40);
-  --sky: oklch(0.74 0.12 245);
+  --ink: oklch(0.24 0.03 260);
+  --ink-foreground: oklch(0.97 0.006 250);
+  --ember: oklch(0.7 0.16 250);
+  --ember-foreground: oklch(0.14 0.03 260);
+  --sky: oklch(0.8 0.11 245);
 
-  --gradient-ink: linear-gradient(150deg, oklch(0.22 0.04 258), oklch(0.15 0.03 262));
-  --gradient-ember: linear-gradient(120deg, var(--ember), oklch(0.62 0.19 30));
-  --shadow-soft: 0 1px 2px oklch(0.2 0.03 258 / 0.06), 0 12px 32px -18px oklch(0.2 0.03 258 / 0.35);
-  --shadow-lift: 0 2px 4px oklch(0.2 0.03 258 / 0.06), 0 28px 60px -28px oklch(0.2 0.03 258 / 0.45);
+  --gradient-ink: linear-gradient(150deg, oklch(0.26 0.05 258), oklch(0.19 0.035 262));
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.4), 0 12px 32px -18px oklch(0 0 0 / 0.7);
+  --shadow-lift: 0 2px 4px oklch(0 0 0 / 0.45), 0 28px 60px -28px oklch(0 0 0 / 0.8);
 }
+
 
 @layer base {
   * {
