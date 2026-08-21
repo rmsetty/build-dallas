@@ -1,0 +1,27 @@
+name = "build-dallas-event-consumer"
+main = "src/index.ts"
+compatibility_date = "2026-08-20"
+workers_dev = false
+
+[[queues.consumers]]
+queue = "build-dallas-event-sources"
+# Small batches keep per-invocation CPU and subrequests well inside the free
+# plan's 10ms / 50-subrequest limits. Each source costs 1-2 fetches plus one
+# ingest_events call, so 5 sources per invocation is ~15 subrequests.
+max_batch_size = 5
+max_batch_timeout = 30
+# Must be >= MAX_ATTEMPTS in src/index.ts so the final attempt reaches our own
+# handler and the failure gets written to the sources table.
+max_retries = 3
+max_concurrency = 2
+
+[vars]
+SUPABASE_URL = "https://uskauklakbisrkenfbur.supabase.co"
+GROQ_MODEL = "llama-3.3-70b-versatile"
+
+# Secrets (never in this file — set with `wrangler secret put <NAME>`):
+#   SUPABASE_SERVICE_ROLE_KEY
+#   GROQ_API_KEY
+
+[observability]
+enabled = true

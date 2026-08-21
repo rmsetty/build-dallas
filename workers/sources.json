@@ -1,0 +1,88 @@
+{
+  "$comment": [
+    "Canonical source catalog. This file is the single place to add or change a source.",
+    "  npm run sources:list   show what is registered, grouped by platform",
+    "  npm run sources:sql    emit an idempotent upsert migration into supabase/migrations/",
+    "  npm run pipeline       run the whole pipeline locally against these sources",
+    "Every URL here was fetched and verified. `active: false` means the source is",
+    "registered but skipped — flip it to true to enable, no code change needed.",
+    "The 12 `html` sources are the ones that need an LLM; they are parked until a",
+    "GROQ_API_KEY is configured."
+  ],
+
+  "sources": [
+    { "name": "Luma — Dallas discover feed", "url": "https://lu.ma/dallas", "source_type": "api", "platform": "luma", "active": true,
+      "scrape_strategy": { "mode": "discover", "place_api_id": "discplace-Ez9iuaZfs6AZDls", "pagination_limit": 50 },
+      "notes": "Resolved via GET api.lu.ma/url?url=dallas. City-wide Dallas feed." },
+
+    { "name": "Luma — Startup Valley", "url": "https://lu.ma/StartupValley", "source_type": "api", "platform": "luma", "active": true,
+      "scrape_strategy": { "mode": "calendar", "calendar_api_id": "cal-Wdpq5TCA3scZSZo", "pagination_limit": 50,
+        "location_filter": ["texas", "tx", "dallas", "fort worth", "plano", "richardson", "irving", "frisco", "addison", "arlington", "denton", "grapevine", "carrollton", "allen", "mckinney", "garland", "lewisville", "southlake", "coppell", "las colinas"] },
+      "notes": "Worldwide calendar — location_filter restricts it to DFW." },
+
+    { "name": "Luma — Texas Startup & Tech Week", "url": "https://lu.ma/texas-startup-tech-week", "source_type": "api", "platform": "luma", "active": true,
+      "scrape_strategy": { "mode": "calendar", "calendar_api_id": "cal-acFpdadTrO9nXH7", "pagination_limit": 50 },
+      "notes": "Sept 28 - Oct 2 2026. Empty until closer to the date." },
+
+    { "name": "Eventbrite — Dallas startup events", "url": "https://www.eventbrite.com/d/tx--dallas/startup-events/", "source_type": "html", "platform": "eventbrite", "active": true, "scrape_strategy": {}, "notes": "19 events verified." },
+    { "name": "Eventbrite — Dallas tech meetups", "url": "https://www.eventbrite.com/d/tx--dallas/tech-meetup/", "source_type": "html", "platform": "eventbrite", "active": true, "scrape_strategy": {}, "notes": "19 events verified." },
+    { "name": "Eventbrite — Dallas entrepreneurship", "url": "https://www.eventbrite.com/d/tx--dallas/entrepreneurship/", "source_type": "html", "platform": "eventbrite", "active": true, "scrape_strategy": {}, "notes": "20 events verified." },
+    { "name": "Eventbrite — Dallas AI", "url": "https://www.eventbrite.com/d/tx--dallas/ai/", "source_type": "html", "platform": "eventbrite", "active": true, "scrape_strategy": {}, "notes": "20 events verified." },
+    { "name": "Eventbrite — Dallas venture capital", "url": "https://www.eventbrite.com/d/tx--dallas/venture-capital/", "source_type": "html", "platform": "eventbrite", "active": true, "scrape_strategy": {}, "notes": "20 events verified." },
+    { "name": "Eventbrite — Dallas networking", "url": "https://www.eventbrite.com/d/tx--dallas/networking/", "source_type": "html", "platform": "eventbrite", "active": true, "scrape_strategy": { "require_keywords": true }, "notes": "20 events verified. Broad slice, so keyword-gated." },
+    { "name": "Eventbrite — Fort Worth startup events", "url": "https://www.eventbrite.com/d/tx--fort-worth/startup-events/", "source_type": "html", "platform": "eventbrite", "active": true, "scrape_strategy": {}, "notes": "20 events verified." },
+    { "name": "Eventbrite — Plano technology", "url": "https://www.eventbrite.com/d/tx--plano/technology/", "source_type": "html", "platform": "eventbrite", "active": true, "scrape_strategy": {}, "notes": "20 events verified." },
+
+    { "name": "Meetup — Dallas Startup Founder 101", "url": "https://www.meetup.com/dallas-startup-founder-101/events/", "source_type": "html", "platform": "meetup", "active": true, "scrape_strategy": { "group_urlname": "dallas-startup-founder-101" }, "notes": null },
+    { "name": "Meetup — Startups and Tech Events in Dallas", "url": "https://www.meetup.com/startups-and-tech-events-in-dallas/events/", "source_type": "html", "platform": "meetup", "active": true, "scrape_strategy": { "group_urlname": "startups-and-tech-events-in-dallas" }, "notes": "6 upcoming verified." },
+    { "name": "Meetup — Dallas AI/ML/Data Developers Group", "url": "https://www.meetup.com/dallas-ai-ml-data-developers-group/events/", "source_type": "html", "platform": "meetup", "active": true, "scrape_strategy": { "group_urlname": "dallas-ai-ml-data-developers-group" }, "notes": null },
+    { "name": "Meetup — Dallas Startup & Tech Mixer", "url": "https://www.meetup.com/dallastechmixer/events/", "source_type": "html", "platform": "meetup", "active": true, "scrape_strategy": { "group_urlname": "dallastechmixer" }, "notes": null },
+    { "name": "Meetup — StartupCouncil.org Dallas Tech Entrepreneurs & Investors", "url": "https://www.meetup.com/dallas-technology-startups-meetup-group/events/", "source_type": "html", "platform": "meetup", "active": true, "scrape_strategy": { "group_urlname": "dallas-technology-startups-meetup-group" }, "notes": "14 upcoming verified." },
+    { "name": "Meetup — Dallas AI", "url": "https://www.meetup.com/dal-ai/events/", "source_type": "html", "platform": "meetup", "active": true, "scrape_strategy": { "group_urlname": "dal-ai" }, "notes": "dallas-ai.org has no machine-readable calendar. NB: meetup.com/dfw-ai is the same group." },
+    { "name": "Meetup — DFW Pythoneers", "url": "https://www.meetup.com/dfwpython/events/", "source_type": "html", "platform": "meetup", "active": true, "scrape_strategy": { "group_urlname": "dfwpython" }, "notes": "Plano, TX. 16 upcoming verified." },
+    { "name": "Meetup — Dallas Hackers Association", "url": "https://www.meetup.com/dallas-hackers-association/events/", "source_type": "html", "platform": "meetup", "active": true, "scrape_strategy": { "group_urlname": "dallas-hackers-association" }, "notes": "Dallas, TX. 3 upcoming verified." },
+    { "name": "Meetup — Dallas Software Developers Group", "url": "https://www.meetup.com/dallas-software-developers-meetup/events/", "source_type": "html", "platform": "meetup", "active": true, "scrape_strategy": { "group_urlname": "dallas-software-developers-meetup" }, "notes": "Dallas, TX. 10 upcoming verified." },
+    { "name": "Meetup — Dallas Rust User Meetup", "url": "https://www.meetup.com/dallas-rust/events/", "source_type": "html", "platform": "meetup", "active": true, "scrape_strategy": { "group_urlname": "dallas-rust" }, "notes": "Dallas, TX. 30 upcoming verified." },
+
+    { "name": "UT Dallas — Comet Calendar", "url": "https://calendar.utdallas.edu", "source_type": "api", "platform": "localist", "active": true,
+      "scrape_strategy": { "api_base": "https://calendar.utdallas.edu", "days": 120, "pp": 100, "require_keywords": true },
+      "notes": "innovation.utdallas.edu/events 404s; Localist API is the working feed. Keyword-gated to drop registration deadlines." },
+    { "name": "UNT — University Calendar", "url": "https://calendar.unt.edu", "source_type": "api", "platform": "localist", "active": true,
+      "scrape_strategy": { "api_base": "https://calendar.unt.edu", "days": 120, "pp": 100, "require_keywords": true },
+      "notes": "murphycenter.unt.edu is dead; stands in for the Murphy Center." },
+    { "name": "UT Arlington — University Calendar", "url": "https://events.uta.edu", "source_type": "api", "platform": "localist", "active": true,
+      "scrape_strategy": { "api_base": "https://events.uta.edu", "days": 120, "pp": 100, "require_keywords": true },
+      "notes": "Found while widening the search: UTA runs Localist too. 24 JSON-LD events on the page." },
+
+    { "name": "The DEC Network — events", "url": "https://thedec.co", "source_type": "api", "platform": "tribe", "active": true,
+      "scrape_strategy": { "api_base": "https://thedec.co", "per_page": 50 },
+      "notes": "thedecnetwork.org is a PARKED domain. thedec.co runs The Events Calendar: 113 events over its free REST API, so no LLM needed." },
+    { "name": "Pegasus Park — events", "url": "https://pegasuspark.com", "source_type": "api", "platform": "tribe", "active": true,
+      "scrape_strategy": { "api_base": "https://pegasuspark.com", "per_page": 50 },
+      "notes": "Runs The Events Calendar (also exposes a webcal feed). Zero upcoming at seed time." },
+    { "name": "DFW Startup Week", "url": "https://dfwstartupweek.com", "source_type": "api", "platform": "tribe", "active": true,
+      "scrape_strategy": { "api_base": "https://dfwstartupweek.com", "per_page": 50 },
+      "notes": "Runs The Events Calendar. Zero upcoming at seed time; fills around the event." },
+
+    { "name": "Dallas Innovates — events calendar", "url": "https://dallasinnovates.com/calendar/", "source_type": "html", "platform": "jsonld", "active": true,
+      "scrape_strategy": { "require_keywords": true },
+      "notes": "43 schema.org Event objects. Keyword-gated: the calendar also carries museum exhibits." },
+    { "name": "AllEvents.in — Dallas startup", "url": "https://allevents.in/dallas/startup", "source_type": "html", "platform": "jsonld", "active": true,
+      "scrape_strategy": { "require_keywords": true },
+      "notes": "15 schema.org Event objects. Aggregator/backstop; keyword-gated to drop concerts." },
+
+    { "name": "Capital Factory — events", "url": "https://www.capitalfactory.com/events", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": { "max_html_bytes": 150000 }, "notes": "LLM-only. /in-person/ redirects here. No API, no JSON-LD, no iCal." },
+    { "name": "Dallas Startup Week", "url": "https://www.dallasstartupweek.com/", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": { "max_html_bytes": 150000 }, "notes": "LLM-only." },
+    { "name": "TechFW / Tech Fort Worth", "url": "https://www.techfortworth.org/events/", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": { "max_html_bytes": 150000 }, "notes": "LLM-only. techfw.org redirects here. ~1.2MB page." },
+    { "name": "Dallas Regional Chamber — events", "url": "https://www.dallaschamber.org/events/", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": { "max_html_bytes": 150000 }, "notes": "LLM-only." },
+    { "name": "North Texas Angel Network", "url": "https://www.northtexasangels.org/", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": { "max_html_bytes": 150000 }, "notes": "LLM-only. ntan.com is a PARKED domain; this is the real site." },
+    { "name": "DFW.community", "url": "https://dfw.community/", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": { "max_html_bytes": 150000 }, "notes": "LLM-only. ~1.4MB page." },
+    { "name": "Ascent Valley", "url": "https://ascentvalley.com/", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": { "max_html_bytes": 150000 }, "notes": "LLM-only. Resolves and serves content but no calendar markup found." },
+    { "name": "Venture Dallas", "url": "https://www.venturedallas.org/", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": { "max_html_bytes": 150000 }, "notes": "LLM-only. The .com does not resolve. Largely one annual event." },
+    { "name": "SMU — university calendar", "url": "https://calendar.smu.edu/", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": { "max_html_bytes": 150000 }, "notes": "LLM-only. Not Localist, no JSON-LD, no iCal. Caruth Institute has no standalone calendar." },
+
+    { "name": "Fintech Dallas", "url": "https://fintechdallas.org", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": {}, "notes": "No live site found on 2026-08-20; domain does not resolve." },
+    { "name": "TxEE — Texas Entrepreneur Executives", "url": "https://txee.org", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": {}, "notes": "Domain does not resolve and no successor site found." },
+    { "name": "UNT Murphy Center for Entrepreneurship", "url": "https://unt-murphy-center.startuptree.co/", "source_type": "html", "platform": "html", "active": false, "scrape_strategy": {}, "notes": "murphycenter.unt.edu is dead; the StartupTree portal requires login. Covered by the UNT Localist source." }
+  ]
+}

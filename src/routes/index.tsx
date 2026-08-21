@@ -1,7 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
-import { Header } from "@/components/site/Header";
-import { PlatformPreview } from "@/components/site/PlatformPreview";
+
+import { SiteHeader, SiteFooter } from "@/components/site/AppShell";
+import { LiveWorkspace } from "@/components/site/LiveWorkspace";
+import { supabase, supabaseConfigured } from "@/lib/supabase";
+import type { EcosystemStats } from "@/lib/database.types";
 import logo from "@/assets/build-dallas-logo.png";
 
 export const Route = createFileRoute("/")({
@@ -25,26 +29,78 @@ export const Route = createFileRoute("/")({
 });
 
 const thesis = [
-  ["01", "Talent", "Find ambitious founders and builders earlier — before they leave the region or disappear into disconnected networks."],
-  ["02", "Research", "Surface labs, patents, researchers, and commercialization opportunities that are otherwise hard to discover."],
-  ["03", "Demand", "Connect startups to corporate pilots, customers, procurement, operators, and domain expertise."],
-  ["04", "Compounding", "Track what founders and early employees do next, so exits become new startups, angels, and repeat founders."],
+  [
+    "01",
+    "Talent",
+    "Find ambitious founders and builders earlier — before they leave the region or disappear into disconnected networks.",
+  ],
+  [
+    "02",
+    "Research",
+    "Surface labs, patents, researchers, and commercialization opportunities that are otherwise hard to discover.",
+  ],
+  [
+    "03",
+    "Demand",
+    "Connect startups to corporate pilots, customers, procurement, operators, and domain expertise.",
+  ],
+  [
+    "04",
+    "Compounding",
+    "Track what founders and early employees do next, so exits become new startups, angels, and repeat founders.",
+  ],
 ];
 
 const networkList = [
-  ["01", "People graph", "founders, investors, researchers, operators, students, corporate leaders."],
+  [
+    "01",
+    "People graph",
+    "founders, investors, researchers, operators, students, corporate leaders.",
+  ],
   ["02", "Company graph", "companies being built now, from idea to exit."],
-  ["03", "Relationship graph", "warm-intro paths, shared communities, previous teams, institutional links."],
-  ["04", "Founder family tree", "which companies produce the region's next founders, angels, and early employees."],
+  [
+    "03",
+    "Relationship graph",
+    "warm-intro paths, shared communities, previous teams, institutional links.",
+  ],
+  [
+    "04",
+    "Founder family tree",
+    "which companies produce the region's next founders, angels, and early employees.",
+  ],
 ];
 
 const capabilities = [
-  ["01", "Ingest", "Startup events, pitches, decks, recordings, transcripts, notes, research, and ecosystem activity."],
-  ["02", "Structure", "Automatically build and update profiles for people, companies, investors, universities, and communities."],
-  ["03", "Verify", "Let founders and community members correct or verify information through account-based contributions."],
-  ["04", "Connect", "Recommend events, people, warm introductions, research matches, pilots, customers, and investors."],
-  ["05", "Track", "Follow companies from idea → building → funding → growth → exit, then follow the people onward."],
-  ["06", "Measure", "Quantify density, collision frequency, repeat founders, spinouts, pilots, exits, and capital recycling."],
+  [
+    "01",
+    "Ingest",
+    "Startup events, pitches, decks, recordings, transcripts, notes, research, and ecosystem activity.",
+  ],
+  [
+    "02",
+    "Structure",
+    "Automatically build and update profiles for people, companies, investors, universities, and communities.",
+  ],
+  [
+    "03",
+    "Verify",
+    "Let founders and community members correct or verify information through account-based contributions.",
+  ],
+  [
+    "04",
+    "Connect",
+    "Recommend events, people, warm introductions, research matches, pilots, customers, and investors.",
+  ],
+  [
+    "05",
+    "Track",
+    "Follow companies from idea → building → funding → growth → exit, then follow the people onward.",
+  ],
+  [
+    "06",
+    "Measure",
+    "Quantify density, collision frequency, repeat founders, spinouts, pilots, exits, and capital recycling.",
+  ],
 ];
 
 const wheel = ["Founders", "Startups", "Employees", "Exits", "Angels", "New founders"];
@@ -52,6 +108,19 @@ const wheel = ["Founders", "Startups", "Employees", "Exits", "Angels", "New foun
 function Index() {
   const [notice, setNotice] = useState<string | null>(null);
   const [joined, setJoined] = useState(false);
+
+  // One RPC for every counter on the page: the alternative is four COUNT(*)
+  // round trips from the browser on first paint.
+  const stats = useQuery({
+    queryKey: ["ecosystem-stats"],
+    enabled: supabaseConfigured,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<EcosystemStats> => {
+      const { data, error } = await supabase.rpc("ecosystem_stats");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   useEffect(() => {
     if (!notice) return;
@@ -65,16 +134,18 @@ function Index() {
     setNotice("Thanks — you're on the list. We'll be in touch soon.");
   };
 
+  const n = (v: number | undefined) => (v === undefined ? "—" : v.toLocaleString());
+
   return (
     <div id="top" className="min-h-screen">
-      <Header />
+      <SiteHeader />
 
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden">
           <div className="pointer-events-none absolute -left-40 -top-40 h-[28rem] w-[28rem] rounded-full bg-primary/15 blur-3xl" />
           <div className="pointer-events-none absolute -right-32 top-40 h-[24rem] w-[24rem] rounded-full bg-ember/15 blur-3xl" />
-          <div className="mx-auto grid max-w-6xl items-center gap-14 px-5 py-20 md:grid-cols-[1.05fr_0.95fr] md:py-28">
+          <div className="mx-auto grid max-w-6xl items-center gap-14 px-5 py-20 md:grid-cols-[1.05fr_0.95fr] md:py-24">
             <div className="reveal">
               <div className="kicker inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-muted-foreground">
                 <span className="h-1.5 w-1.5 rounded-full bg-ember" />
@@ -91,28 +162,28 @@ function Index() {
                 what is being built across North Texas.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a
-                  href="#platform"
+                <Link
+                  to="/companies"
                   className="rounded-full bg-ink px-6 py-3 text-sm font-medium text-ink-foreground shadow-soft transition-transform hover:-translate-y-0.5"
                 >
-                  Explore the platform
-                </a>
-                <a
-                  href="#join"
+                  Browse who's building
+                </Link>
+                <Link
+                  to="/profile"
                   className="rounded-full border border-border bg-card px-6 py-3 text-sm font-medium transition-colors hover:bg-accent"
                 >
-                  Get involved
-                </a>
+                  Get your matches
+                </Link>
               </div>
               <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-border pt-6">
                 {[
-                  ["258", "launch-event attendees"],
-                  ["DFW", "built for the whole metroplex"],
-                  ["Live", "community + intelligence layer"],
-                ].map(([n, l]) => (
-                  <div key={l}>
-                    <dt className="font-display text-2xl">{n}</dt>
-                    <dd className="mt-1 text-xs text-muted-foreground">{l}</dd>
+                  [n(stats.data?.companies), "companies tracked"],
+                  [n(stats.data?.events), "upcoming DFW events"],
+                  [n(stats.data?.companies_raising), "raising right now"],
+                ].map(([value, label]) => (
+                  <div key={label}>
+                    <dt className="font-display text-2xl">{value}</dt>
+                    <dd className="mt-1 text-xs text-muted-foreground">{label}</dd>
                   </div>
                 ))}
               </dl>
@@ -129,11 +200,11 @@ function Index() {
                 height={512}
                 className="absolute left-1/2 top-1/2 w-28 -translate-x-1/2 -translate-y-1/2"
               />
-              {["Founders", "Capital", "Research", "Talent", "Corporates"].map((n, i) => {
+              {["Founders", "Capital", "Research", "Talent", "Corporates"].map((label, i) => {
                 const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
                 return (
                   <span
-                    key={n}
+                    key={label}
                     className="absolute rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium shadow-soft"
                     style={{
                       left: `${50 + 44 * Math.cos(angle)}%`,
@@ -141,7 +212,7 @@ function Index() {
                       transform: "translate(-50%, -50%)",
                     }}
                   >
-                    {n}
+                    {label}
                   </span>
                 );
               })}
@@ -149,8 +220,24 @@ function Index() {
           </div>
         </section>
 
+        {/*
+          The working surface, straight after the hero rather than buried in a
+          "platform" section: this is the product, and it is live.
+        */}
+        <section className="mx-auto max-w-6xl px-5 pb-8">
+          <LiveWorkspace />
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            Live data from {n(stats.data?.sources)} public DFW sources, refreshed daily. Anything
+            wrong?{" "}
+            <Link to="/wiki" className="text-primary hover:underline">
+              Suggest an edit
+            </Link>{" "}
+            — two members agreeing applies it automatically.
+          </p>
+        </section>
+
         {/* Launch strip */}
-        <section id="launch" className="mx-auto max-w-6xl px-5">
+        <section className="mx-auto max-w-6xl px-5 pt-12">
           <div className="surface-ink flex flex-wrap items-center justify-between gap-6 rounded-3xl p-8">
             <div className="max-w-md">
               <span className="kicker opacity-70">Launched August 7, 2026</span>
@@ -167,7 +254,7 @@ function Index() {
         </section>
 
         {/* Thesis */}
-        <section id="why" className="mx-auto max-w-6xl px-5 py-24">
+        <section className="mx-auto max-w-6xl px-5 py-24">
           <span className="kicker text-muted-foreground">The thesis</span>
           <div className="mt-4 grid gap-8 md:grid-cols-2">
             <h2 className="text-4xl leading-tight sm:text-5xl">
@@ -183,17 +270,17 @@ function Index() {
             </p>
           </div>
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {thesis.map(([n, h, p], i) => (
+            {thesis.map(([num, heading, body], i) => (
               <article
-                key={h}
+                key={heading}
                 className={`rounded-2xl border p-6 transition-transform hover:-translate-y-1 ${
                   i === 3 ? "surface-ink border-transparent" : "border-border bg-card shadow-soft"
                 }`}
               >
-                <span className="kicker opacity-60">{n}</span>
-                <h3 className="mt-3 text-2xl">{h}</h3>
+                <span className="kicker opacity-60">{num}</span>
+                <h3 className="mt-3 text-2xl">{heading}</h3>
                 <p className={`mt-2 text-sm ${i === 3 ? "opacity-80" : "text-muted-foreground"}`}>
-                  {p}
+                  {body}
                 </p>
               </article>
             ))}
@@ -201,7 +288,7 @@ function Index() {
         </section>
 
         {/* Network */}
-        <section id="network" className="surface-ink">
+        <section className="surface-ink">
           <div className="mx-auto grid max-w-6xl items-center gap-14 px-5 py-24 md:grid-cols-2">
             <div>
               <span className="kicker opacity-60">The network</span>
@@ -213,11 +300,11 @@ function Index() {
                 activity is happening, and what changed since yesterday.
               </p>
               <ul className="mt-8 space-y-4">
-                {networkList.map(([n, t, d]) => (
-                  <li key={t} className="flex gap-4 border-t border-white/10 pt-4">
-                    <span className="kicker opacity-50">{n}</span>
+                {networkList.map(([num, title, body]) => (
+                  <li key={title} className="flex gap-4 border-t border-white/10 pt-4">
+                    <span className="kicker opacity-50">{num}</span>
                     <p className="text-sm">
-                      <strong>{t}</strong> <span className="opacity-75">— {d}</span>
+                      <strong>{title}</strong> <span className="opacity-75">— {body}</span>
                     </p>
                   </li>
                 ))}
@@ -225,7 +312,12 @@ function Index() {
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <svg viewBox="0 0 700 560" role="img" aria-label="Illustrative DFW founder network graph" className="w-full">
+              <svg
+                viewBox="0 0 700 560"
+                role="img"
+                aria-label="Illustrative DFW founder network graph"
+                className="w-full"
+              >
                 <g stroke="currentColor" strokeOpacity="0.25" strokeWidth="1.5">
                   <line x1="350" y1="280" x2="165" y2="150" />
                   <line x1="350" y1="280" x2="540" y2="125" />
@@ -240,10 +332,16 @@ function Index() {
                 </g>
                 <g fontSize="18" fill="currentColor" textAnchor="middle" fontWeight="500">
                   <circle cx="350" cy="280" r="68" fill="var(--color-primary)" />
-                  <text x="350" y="275">BUILD</text>
-                  <text x="350" y="300">DALLAS</text>
+                  <text x="350" y="275">
+                    BUILD
+                  </text>
+                  <text x="350" y="300">
+                    DALLAS
+                  </text>
                   <circle cx="165" cy="150" r="48" fill="var(--color-ember)" fillOpacity="0.9" />
-                  <text x="165" y="155">Founder</text>
+                  <text x="165" y="155">
+                    Founder
+                  </text>
                   {[
                     [540, 125, "Investor"],
                     [130, 390, "Research"],
@@ -252,8 +350,18 @@ function Index() {
                     [355, 485, "Startup"],
                   ].map(([x, y, label]) => (
                     <g key={label as string}>
-                      <circle cx={x as number} cy={y as number} r="46" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.3" />
-                      <text x={x as number} y={(y as number) + 5}>{label}</text>
+                      <circle
+                        cx={x as number}
+                        cy={y as number}
+                        r="46"
+                        fill="currentColor"
+                        fillOpacity="0.1"
+                        stroke="currentColor"
+                        strokeOpacity="0.3"
+                      />
+                      <text x={x as number} y={(y as number) + 5}>
+                        {label}
+                      </text>
                     </g>
                   ))}
                 </g>
@@ -266,26 +374,6 @@ function Index() {
           </div>
         </section>
 
-        {/* Platform */}
-        <section id="platform" className="mx-auto max-w-6xl px-5 py-24">
-          <span className="kicker text-muted-foreground">The platform</span>
-          <div className="mt-4 grid gap-8 md:grid-cols-2">
-            <h2 className="text-4xl leading-tight sm:text-5xl">
-              Community on the front end.
-              <br />
-              Ecosystem intelligence underneath.
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              The tooling is being developed in phases. This site is the public shell: it shows what
-              Build Dallas is building toward while the data, graph, matching, and ingestion systems
-              come online.
-            </p>
-          </div>
-          <div className="mt-12">
-            <PlatformPreview onNotice={setNotice} />
-          </div>
-        </section>
-
         {/* Capabilities */}
         <section className="border-y border-border bg-secondary/50">
           <div className="mx-auto max-w-6xl px-5 py-24">
@@ -294,11 +382,14 @@ function Index() {
               From scattered signals to a searchable, living map of DFW.
             </h2>
             <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {capabilities.map(([n, h, p]) => (
-                <article key={h} className="rounded-2xl border border-border bg-card p-6 shadow-soft">
-                  <span className="kicker text-ember">{n}</span>
-                  <h3 className="mt-2 text-2xl">{h}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{p}</p>
+              {capabilities.map(([num, heading, body]) => (
+                <article
+                  key={heading}
+                  className="rounded-2xl border border-border bg-card p-6 shadow-soft"
+                >
+                  <span className="kicker text-ember">{num}</span>
+                  <h3 className="mt-2 text-2xl">{heading}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{body}</p>
                 </article>
               ))}
             </div>
@@ -320,7 +411,10 @@ function Index() {
                 creates spinouts, corporations create demand, and the network makes each next
                 connection easier.
               </p>
-              <a href="#join" className="mt-6 inline-block font-medium text-primary hover:underline">
+              <a
+                href="#join"
+                className="mt-6 inline-block font-medium text-primary hover:underline"
+              >
                 Help build the loop →
               </a>
             </div>
@@ -329,11 +423,11 @@ function Index() {
               <div className="absolute left-1/2 top-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-ink font-display text-xl text-ink-foreground">
                 DFW
               </div>
-              {wheel.map((w, i) => {
+              {wheel.map((label, i) => {
                 const angle = (i / wheel.length) * Math.PI * 2 - Math.PI / 2;
                 return (
                   <span
-                    key={w}
+                    key={label}
                     className="absolute rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium shadow-soft"
                     style={{
                       left: `${50 + 45 * Math.cos(angle)}%`,
@@ -341,7 +435,7 @@ function Index() {
                       transform: "translate(-50%, -50%)",
                     }}
                   >
-                    {w}
+                    {label}
                   </span>
                 );
               })}
@@ -360,6 +454,13 @@ function Index() {
               <p className="mt-4 opacity-80">
                 Build Dallas is assembling the people who want DFW's startup ecosystem to compound
                 faster and stay connected across city, industry, institution, and generation.
+              </p>
+              <p className="mt-4 text-sm opacity-70">
+                Already have an account?{" "}
+                <Link to="/people" className="underline">
+                  See who else is here
+                </Link>
+                .
               </p>
             </div>
             <form onSubmit={submit} className="space-y-3">
@@ -388,11 +489,17 @@ function Index() {
                 <option value="" disabled>
                   I am a...
                 </option>
-                {["Founder / Builder", "Investor", "Researcher / University", "Corporate / Operator", "Student", "Community Organizer", "Other"].map(
-                  (o) => (
-                    <option key={o}>{o}</option>
-                  ),
-                )}
+                {[
+                  "Founder / Builder",
+                  "Investor",
+                  "Researcher / University",
+                  "Corporate / Operator",
+                  "Student",
+                  "Community Organizer",
+                  "Other",
+                ].map((o) => (
+                  <option key={o}>{o}</option>
+                ))}
               </select>
               <button
                 type="submit"
@@ -408,26 +515,7 @@ function Index() {
         </section>
       </main>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-6 px-5 py-10 text-sm">
-          <a href="#top" className="flex items-center gap-2.5">
-            <img src={logo} alt="" width={28} height={28} loading="lazy" className="h-7 w-7" />
-            <span className="font-bold tracking-[0.18em]">BUILD DALLAS</span>
-          </a>
-          <p className="max-w-sm text-muted-foreground">
-            Connecting DFW's next generation of founders — and the resources that help them
-            compound.
-          </p>
-          <div className="flex gap-5 text-muted-foreground">
-            {["#why", "#platform", "#launch", "#join"].map((h) => (
-              <a key={h} href={h} className="hover:text-foreground">
-                {h.replace("#", "")}
-              </a>
-            ))}
-          </div>
-          <span className="text-muted-foreground">© 2026 Build Dallas</span>
-        </div>
-      </footer>
+      <SiteFooter />
 
       {notice && (
         <div

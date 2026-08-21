@@ -1,0 +1,22 @@
+{
+  "name": "build-dallas-workers",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:parsers": "node --experimental-strip-types --no-warnings test/parsers.live.test.ts",
+    "pipeline": "node --experimental-strip-types --no-warnings local/pipeline.ts",
+    "sources": "node --experimental-strip-types --no-warnings local/list-sources.ts",
+    "sources:sql": "node --experimental-strip-types --no-warnings local/sync-sources.ts",
+    "dev:cron": "wrangler dev --config event-cron/wrangler.toml",
+    "dev:consumer": "wrangler dev --config event-consumer/wrangler.toml",
+    "deploy:cron": "wrangler deploy --config event-cron/wrangler.toml",
+    "deploy:consumer": "wrangler deploy --config event-consumer/wrangler.toml",
+    "companies": "node --experimental-strip-types --no-warnings local/companies.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260820.1",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.28.0"
+  }
+}

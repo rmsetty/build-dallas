@@ -1,0 +1,23 @@
+name = "build-dallas-event-cron"
+main = "src/index.ts"
+compatibility_date = "2026-08-20"
+workers_dev = true
+
+# Once a day at 12:00 UTC (07:00 CDT / 06:00 CST).
+# 30 active sources -> 30 queue writes/day against a 10,000 ops/day free budget.
+[triggers]
+crons = ["0 12 * * *"]
+
+[[queues.producers]]
+binding = "EVENT_QUEUE"
+queue = "build-dallas-event-sources"
+
+[vars]
+SUPABASE_URL = "https://uskauklakbisrkenfbur.supabase.co"
+
+# Secrets (never in this file — set with `wrangler secret put <NAME>`):
+#   SUPABASE_SERVICE_ROLE_KEY
+#   TRIGGER_SECRET   optional; enables the manual-trigger fetch handler
+
+[observability]
+enabled = true
