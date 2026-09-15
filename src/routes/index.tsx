@@ -48,11 +48,15 @@ const partnerPlaceholders = [
   "Investors",
 ];
 const communities = [
-  "Stripe Dallas",
-  "SIP",
-  "Claude Community",
-  "Community logo",
-  "Community logo",
+  {
+    name: "Claude Dallas",
+    detail: "Dallas SIP and Claude + Dallas Claude Community",
+  },
+  { name: "Comet Foundry" },
+  { name: "AITX" },
+  { name: "Founders Plaza" },
+  { name: "9K Club" },
+  { name: "AI Marketing World" },
 ];
 const Arrow = () => (
   <span aria-hidden className="transition-transform group-hover:translate-x-1">
@@ -188,18 +192,25 @@ function HomePage() {
         </section>
         <section className="border-y border-border bg-secondary/30">
           <div className="mx-auto max-w-6xl px-5 py-20">
-            <span className="kicker text-primary">Local communities</span>
+            <span className="kicker text-primary">Community partners</span>
             <h2 className="mt-4 text-4xl">Communities building Dallas</h2>
-            <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              {communities.map((name, index) => (
+            <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {communities.map((community) => (
                 <div
-                  key={`${name}-${index}`}
+                  key={community.name}
                   className="flex min-h-28 items-center gap-4 rounded-2xl border border-border bg-background p-5"
                 >
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 font-display text-xl text-primary">
-                    {name === "Community logo" ? "+" : name.charAt(0)}
+                    {community.name.charAt(0)}
                   </span>
-                  <span className="text-sm font-semibold">{name}</span>
+                  <span>
+                    <span className="block text-sm font-semibold">{community.name}</span>
+                    {community.detail && (
+                      <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                        {community.detail}
+                      </span>
+                    )}
+                  </span>
                 </div>
               ))}
             </div>
