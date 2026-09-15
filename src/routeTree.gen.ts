@@ -12,11 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as EventsRouteImport } from './routes/events'
-import { Route as GetConnectedRouteImport } from './routes/get-connected'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as WikiIndexRouteImport } from './routes/wiki/index'
 import { Route as WikiEntityTypeEntityIdRouteImport } from './routes/wiki/$entityType.$entityId'
 
@@ -35,11 +33,6 @@ const EventsRoute = EventsRouteImport.update({
   path: '/events',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GetConnectedRoute = GetConnectedRouteImport.update({
-  id: '/get-connected',
-  path: '/get-connected',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -53,11 +46,6 @@ const PeopleRoute = PeopleRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResourcesRoute = ResourcesRouteImport.update({
-  id: '/resources',
-  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WikiIndexRoute = WikiIndexRouteImport.update({
@@ -75,11 +63,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
   '/events': typeof EventsRoute
-  '/get-connected': typeof GetConnectedRoute
   '/login': typeof LoginRoute
   '/people': typeof PeopleRoute
   '/profile': typeof ProfileRoute
-  '/resources': typeof ResourcesRoute
   '/wiki/': typeof WikiIndexRoute
   '/wiki/$entityType/$entityId': typeof WikiEntityTypeEntityIdRoute
 }
@@ -87,11 +73,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
   '/events': typeof EventsRoute
-  '/get-connected': typeof GetConnectedRoute
   '/login': typeof LoginRoute
   '/people': typeof PeopleRoute
   '/profile': typeof ProfileRoute
-  '/resources': typeof ResourcesRoute
   '/wiki': typeof WikiIndexRoute
   '/wiki/$entityType/$entityId': typeof WikiEntityTypeEntityIdRoute
 }
@@ -100,11 +84,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
   '/events': typeof EventsRoute
-  '/get-connected': typeof GetConnectedRoute
   '/login': typeof LoginRoute
   '/people': typeof PeopleRoute
   '/profile': typeof ProfileRoute
-  '/resources': typeof ResourcesRoute
   '/wiki/': typeof WikiIndexRoute
   '/wiki/$entityType/$entityId': typeof WikiEntityTypeEntityIdRoute
 }
@@ -114,11 +96,9 @@ export interface FileRouteTypes {
     | '/'
     | '/companies'
     | '/events'
-    | '/get-connected'
     | '/login'
     | '/people'
     | '/profile'
-    | '/resources'
     | '/wiki/'
     | '/wiki/$entityType/$entityId'
   fileRoutesByTo: FileRoutesByTo
@@ -126,11 +106,9 @@ export interface FileRouteTypes {
     | '/'
     | '/companies'
     | '/events'
-    | '/get-connected'
     | '/login'
     | '/people'
     | '/profile'
-    | '/resources'
     | '/wiki'
     | '/wiki/$entityType/$entityId'
   id:
@@ -138,11 +116,9 @@ export interface FileRouteTypes {
     | '/'
     | '/companies'
     | '/events'
-    | '/get-connected'
     | '/login'
     | '/people'
     | '/profile'
-    | '/resources'
     | '/wiki/'
     | '/wiki/$entityType/$entityId'
   fileRoutesById: FileRoutesById
@@ -151,11 +127,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CompaniesRoute: typeof CompaniesRoute
   EventsRoute: typeof EventsRoute
-  GetConnectedRoute: typeof GetConnectedRoute
   LoginRoute: typeof LoginRoute
   PeopleRoute: typeof PeopleRoute
   ProfileRoute: typeof ProfileRoute
-  ResourcesRoute: typeof ResourcesRoute
   WikiIndexRoute: typeof WikiIndexRoute
   WikiEntityTypeEntityIdRoute: typeof WikiEntityTypeEntityIdRoute
 }
@@ -183,13 +157,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/get-connected': {
-      id: '/get-connected'
-      path: '/get-connected'
-      fullPath: '/get-connected'
-      preLoaderRoute: typeof GetConnectedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -209,13 +176,6 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/resources': {
-      id: '/resources'
-      path: '/resources'
-      fullPath: '/resources'
-      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wiki/': {
@@ -239,11 +199,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CompaniesRoute: CompaniesRoute,
   EventsRoute: EventsRoute,
-  GetConnectedRoute: GetConnectedRoute,
   LoginRoute: LoginRoute,
   PeopleRoute: PeopleRoute,
   ProfileRoute: ProfileRoute,
-  ResourcesRoute: ResourcesRoute,
   WikiIndexRoute: WikiIndexRoute,
   WikiEntityTypeEntityIdRoute: WikiEntityTypeEntityIdRoute,
 }

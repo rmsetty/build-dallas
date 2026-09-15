@@ -2,267 +2,422 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/site/AppShell";
-import { supabase, supabaseConfigured } from "@/lib/supabase";
-import type { CompanyRow } from "@/lib/database.types";
-import { titleCase } from "@/lib/format";
+import {
+  Chip,
+  EmptyState,
+  ErrorState,
+  LoadingRows,
+  Pagination,
+  SignalBadge,
+  TabBar,
+  cx,
+} from "@/components/site/Primitives";
+import { supabase } from "@/lib/supabase";
+import type { CompanyRow, CompanySignal } from "@/lib/database.types";
+import { freshness, titleCase } from "@/lib/format";
 
 export const Route = createFileRoute("/companies")({
   head: () => ({
     meta: [
-      { title: "Companies Building in Dallas — Build Dallas" },
+      { title: "Companies — Build Dallas" },
       {
         name: "description",
-        content: "Discover startups and emerging companies being built across Dallas-Fort Worth.",
+        content:
+          "A living directory of the companies being built across North Texas, with a freshness signal showing when each was last seen in the ecosystem.",
       },
     ],
   }),
   component: CompaniesPage,
 });
-const stages = ["idea", "pre-seed", "seed", "series-a", "growth", "bootstrapped"];
-const inputClass =
-  "rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none transition focus:border-primary";
+
+const STAGES = [
+  "idea",
+  "pre-seed",
+  "seed",
+  "series-a",
+  "series-b",
+  "series-c-plus",
+  "growth",
+  "bootstrapped",
+  "acquired",
+  "public",
+  "unknown",
+] as const;
+
+type SortKey = "signal" | "fresh" | "name" | "new";
+
+/**
+ * Region scope. Most sources publish no address at all, so "unknown" is a real
+ * answer rather than a bug — folding it into the DFW view would overstate what
+ * we actually know, and hiding it would throw away most of the directory.
+ */
+type Scope = "dfw" | "all";
+
+const SCOPES = [
+  { key: "dfw" as const, label: "DFW only" },
+  { key: "all" as const, label: "All Texas" },
+];
+
+const PAGE_SIZE = 24;
+
+/** Upper bound for the tag-facet probe. Comfortably above the table size. */
+const FACET_CEILING = 3000;
+
+/** Human labels for company_sources.slug, used to show provenance on a card. */
+const SOURCE_LABELS: Record<string, string> = {
+  "sec-form-d": "SEC Form D",
+  "capital-factory": "Capital Factory",
+  "yc-texas": "Y Combinator",
+  "health-wildcatters": "Health Wildcatters",
+  events: "DFW events",
+};
 
 function CompaniesPage() {
   const [search, setSearch] = useState("");
-  const [stage, setStage] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [area, setArea] = useState("");
-  const [selected, setSelected] = useState<CompanyRow | null>(null);
-  const query = useQuery({
-    queryKey: ["companies-directory"],
-    enabled: supabaseConfigured,
-    queryFn: async (): Promise<CompanyRow[]> => {
-      const { data, error } = await supabase.from("companies").select("*").order("name").limit(200);
+  const [stage, setStage] = useState<string>("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [sort, setSort] = useState<SortKey>("signal");
+  const [scope, setScope] = useState<Scope>("all");
+  const [signal, setSignal] = useState<CompanySignal | "">("");
+  const [page, setPage] = useState(1);
+
+  // Any filter change invalidates the current page number.
+  const resetPage = () => setPage(1);
+
+  const { data, isPending, error } = useQuery({
+    queryKey: ["companies", { search: search.trim(), stage, tags, sort, scope, signal, page }],
+    // Paging swaps the whole grid; holding the previous page under the new one
+    // keeps the layout from collapsing to a spinner on every click.
+    placeholderData: (prev) => prev,
+    queryFn: async (): Promise<{ rows: CompanyRow[]; total: number }> => {
+      const query = supabase.from("companies").select("*", { count: "exact" });
+
+      const term = search.trim();
+      if (term) {
+        const safe = term.replace(/[,()*]/g, " ");
+        query.or(`name.ilike.%${safe}%,one_liner.ilike.%${safe}%,description.ilike.%${safe}%`);
+      }
+      if (stage) query.eq("stage", stage);
+      if (signal) query.eq("signal", signal);
+      if (tags.length) query.overlaps("tags", tags);
+      // `dfw` is a stored generated column, so this is an index scan, not a
+      // string match run over every row.
+      if (scope === "dfw") query.eq("dfw", true);
+
+      // The point of the directory is "who is active", not "who exists", so the
+      // default order is by the freshest piece of evidence we hold.
+      // nullsFirst:false keeps never-seen companies last.
+      if (sort === "signal") query.order("signal_at", { ascending: false, nullsFirst: false });
+      else if (sort === "fresh")
+        query.order("last_seen_at", { ascending: false, nullsFirst: false });
+      else if (sort === "new") query.order("first_seen_at", { ascending: false });
+      else query.order("name", { ascending: true });
+
+      // Name is the tiebreaker on every sort: signal_at and last_seen_at have
+      // large ties, and without a stable second key Postgres is free to return
+      // the same company on two different pages.
+      if (sort !== "name") query.order("name", { ascending: true });
+
+      // One page over the wire instead of the whole 1,000-row directory.
+      const from = (page - 1) * PAGE_SIZE;
+      query.range(from, from + PAGE_SIZE - 1);
+
+      const { data, error, count } = await query;
       if (error) throw error;
-      return data ?? [];
+      return { rows: data ?? [], total: count ?? (data ?? []).length };
     },
   });
-  const industries = useMemo(
-    () =>
-      [...new Set((query.data ?? []).flatMap((company) => company.tags ?? []))].sort().slice(0, 30),
-    [query.data],
-  );
-  const companies = useMemo(
-    () =>
-      (query.data ?? []).filter((company) => {
-        const term = search.trim().toLowerCase();
-        const matchesSearch =
-          !term ||
-          company.name.toLowerCase().includes(term) ||
-          company.one_liner?.toLowerCase().includes(term);
-        const matchesStage = !stage || company.stage === stage;
-        const matchesIndustry = !industry || company.tags?.includes(industry);
-        const matchesArea =
-          !area || company.hq_location?.toLowerCase().includes(area.toLowerCase());
-        return matchesSearch && matchesStage && matchesIndustry && matchesArea;
-      }),
-    [query.data, search, stage, industry, area],
-  );
+
+  const companies = useMemo(() => data?.rows ?? [], [data]);
+  const total = data?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  /**
+   * Tag chips describe the whole filtered directory, not the 24 cards on
+   * screen — otherwise the available filters would shift under you as you page.
+   * Selecting only the tags column keeps this cheap.
+   */
+  const facets = useQuery({
+    queryKey: ["company-facets", { search: search.trim(), stage, scope, signal }],
+    staleTime: 60_000,
+    queryFn: async (): Promise<string[][]> => {
+      const query = supabase.from("companies").select("tags").limit(FACET_CEILING);
+      const term = search.trim();
+      if (term) {
+        const safe = term.replace(/[,()*]/g, " ");
+        query.or(`name.ilike.%${safe}%,one_liner.ilike.%${safe}%,description.ilike.%${safe}%`);
+      }
+      if (stage) query.eq("stage", stage);
+      if (signal) query.eq("signal", signal);
+      if (scope === "dfw") query.eq("dfw", true);
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data ?? []).map((r) => r.tags ?? []);
+    },
+  });
+
+  const availableTags = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const rowTags of facets.data ?? [])
+      for (const t of rowTags) counts.set(t, (counts.get(t) ?? 0) + 1);
+    for (const t of tags) if (!counts.has(t)) counts.set(t, 0);
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 20);
+  }, [facets.data, tags]);
+
+  const toggleTag = (tag: string) => {
+    resetPage();
+    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  };
+
   return (
     <AppShell
-      kicker="Dallas–Fort Worth"
+      kicker="The directory"
       title={
         <>
-          Companies Building <span className="text-primary">in Dallas</span>
+          Companies being built
+          <br />
+          <span className="text-primary">across North Texas.</span>
         </>
       }
-      intro="Discover startups and emerging companies being built across Dallas–Fort Worth."
-      actions={
-        <Link
-          to="/get-connected"
-          className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground"
-        >
-          Submit Your Company
-        </Link>
-      }
+      intro="Assembled from SEC exempt-offering filings, Texas accelerator and venture portfolios, the Y Combinator directory, and the companies named at DFW events — each card showing what tells us the company is live right now."
     >
-      <div className="grid gap-4 rounded-2xl border border-border bg-card/50 p-4 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search companies"
-          className={inputClass}
-        />
-        <select
-          value={industry}
-          onChange={(e) => setIndustry(e.target.value)}
-          className={inputClass}
-          aria-label="Industry"
-        >
-          <option value="">All industries</option>
-          {industries.map((item) => (
-            <option key={item}>{item}</option>
-          ))}
-        </select>
-        <select
-          value={stage}
-          onChange={(e) => setStage(e.target.value)}
-          className={inputClass}
-          aria-label="Stage"
-        >
-          <option value="">All stages</option>
-          {stages.map((item) => (
-            <option key={item} value={item}>
-              {titleCase(item)}
-            </option>
-          ))}
-        </select>
-        <input
-          value={area}
-          onChange={(e) => setArea(e.target.value)}
-          placeholder="City / area"
-          className={inputClass}
-        />
-      </div>
-      {!supabaseConfigured || query.error ? (
-        <DirectoryEmpty />
-      ) : query.isPending ? (
-        <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
-          {Array.from({ length: 8 }, (_, i) => (
-            <div key={i} className="h-44 animate-pulse rounded-2xl bg-card" />
-          ))}
-        </div>
-      ) : companies.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-dashed border-border p-14 text-center">
-          <h2 className="text-2xl">No companies match those filters.</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Try a broader search or clear one of the filters.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {companies.map((company) => (
-            <button
-              key={company.id}
-              type="button"
-              onClick={() => setSelected(company)}
-              className="group flex min-h-44 flex-col items-center justify-center rounded-2xl border border-border bg-card p-6 text-center transition hover:-translate-y-1 hover:border-primary/60 hover:shadow-lift"
+      <div className="space-y-6">
+        <div className={`${cx.card} space-y-4`}>
+          <div className="flex flex-wrap items-center gap-3">
+            <TabBar
+              tabs={SCOPES}
+              active={scope}
+              onChange={(next) => {
+                setScope(next);
+                resetPage();
+              }}
+              size="sm"
+            />
+            <input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                resetPage();
+              }}
+              placeholder="⌕  Search companies"
+              aria-label="Search companies"
+              className={`min-w-[16rem] flex-1 ${cx.input}`}
+            />
+            <select
+              value={stage}
+              onChange={(e) => {
+                setStage(e.target.value);
+                resetPage();
+              }}
+              aria-label="Stage"
+              className={cx.select}
             >
-              {company.logo_url ? (
-                <img
-                  src={company.logo_url}
-                  alt=""
-                  className="max-h-16 max-w-[10rem] object-contain"
-                />
-              ) : (
-                <span className="grid h-16 w-16 place-items-center rounded-2xl bg-secondary font-display text-2xl text-primary">
-                  {company.name.slice(0, 2).toUpperCase()}
-                </span>
+              <option value="">All stages</option>
+              {STAGES.map((s) => (
+                <option key={s} value={s}>
+                  {titleCase(s)}
+                </option>
+              ))}
+            </select>
+            <select
+              value={signal}
+              onChange={(e) => {
+                setSignal(e.target.value as CompanySignal | "");
+                resetPage();
+              }}
+              aria-label="Activity signal"
+              className={cx.select}
+            >
+              <option value="">Any signal</option>
+              <option value="raising">Raising now</option>
+              <option value="event_active">Active at DFW events</option>
+              <option value="accelerator">In an accelerator</option>
+              <option value="yc">Y Combinator</option>
+              <option value="portfolio">Venture backed</option>
+            </select>
+            <select
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value as SortKey);
+                resetPage();
+              }}
+              aria-label="Sort order"
+              className={cx.select}
+            >
+              <option value="signal">Freshest signal</option>
+              <option value="fresh">Most recently seen</option>
+              <option value="new">Newest to the directory</option>
+              <option value="name">A–Z</option>
+            </select>
+          </div>
+
+          {availableTags.length > 0 && (
+            <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+              {availableTags.map(([tag, count]) => (
+                <Chip
+                  key={tag}
+                  active={tags.includes(tag)}
+                  onClick={() => toggleTag(tag)}
+                  title={`${count} compan${count === 1 ? "y" : "ies"}`}
+                >
+                  {tag}
+                </Chip>
+              ))}
+              {tags.length > 0 && (
+                <button
+                  onClick={() => {
+                    setTags([]);
+                    resetPage();
+                  }}
+                  className="px-2 py-1.5 text-xs text-muted-foreground underline-offset-4 hover:underline"
+                >
+                  Clear
+                </button>
               )}
-              <span className="mt-5 font-semibold">{company.name}</span>
-              <span className="mt-1 text-xs text-muted-foreground">
-                {company.hq_location ?? "Dallas–Fort Worth"}
-              </span>
-            </button>
-          ))}
+            </div>
+          )}
         </div>
-      )}
-      <div className="mt-16 flex flex-wrap items-center justify-between gap-5 rounded-3xl border border-border bg-secondary/40 p-8">
-        <div>
-          <span className="kicker text-primary">Join the directory</span>
-          <h2 className="mt-2 text-3xl">Building in Dallas?</h2>
-        </div>
-        <Link
-          to="/get-connected"
-          className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground"
-        >
-          Submit Your Company
-        </Link>
+
+        {error ? (
+          <ErrorState error={error} />
+        ) : isPending ? (
+          <LoadingRows />
+        ) : companies.length === 0 ? (
+          <EmptyState
+            title="No companies yet"
+            body={
+              search.trim() || stage || tags.length || signal || scope === "dfw"
+                ? "Nothing matches those filters. Try widening the scope to all of Texas, or clearing the signal filter."
+                : "Companies arrive from the discovery pipeline. Run `npm run companies` in workers/ to populate the directory."
+            }
+            action={
+              <Link to="/events" className={cx.secondary}>
+                Browse events instead
+              </Link>
+            }
+          />
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">
+              {total.toLocaleString()} compan{total === 1 ? "y" : "ies"}
+              {pageCount > 1 && ` · page ${page} of ${pageCount}`}
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {companies.map((company) => (
+                <CompanyCard key={company.id} company={company} />
+              ))}
+            </div>
+            <Pagination
+              page={page}
+              pageCount={pageCount}
+              label="companies"
+              onChange={(next) => {
+                setPage(next);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
+          </>
+        )}
       </div>
-      {selected && <CompanyDialog company={selected} onClose={() => setSelected(null)} />}
     </AppShell>
   );
 }
 
-function DirectoryEmpty() {
-  return (
-    <div className="mt-10 grid gap-6 rounded-3xl border border-border bg-card p-9 text-center sm:p-14">
-      <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-primary/15 font-display text-2xl text-primary">
-        BD
-      </div>
-      <div>
-        <h2 className="text-3xl">The directory is being curated.</h2>
-        <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
-          We're bringing together companies building across DFW. If your startup belongs here,
-          introduce yourself.
-        </p>
-      </div>
-      <Link
-        to="/get-connected"
-        className="mx-auto rounded-full border border-border px-6 py-3 text-sm font-semibold hover:bg-accent"
-      >
-        Submit Your Company
-      </Link>
-    </div>
-  );
-}
+function CompanyCard({ company }: { company: CompanyRow }) {
+  // Prefer the signal date: it is the date of the evidence (the filing, the
+  // event) rather than the date we happened to crawl.
+  const fresh = freshness(company.signal_at ?? company.last_seen_at);
+  const dot =
+    fresh.tone === "live"
+      ? "bg-ember"
+      : fresh.tone === "recent"
+        ? "bg-primary"
+        : "bg-muted-foreground/50";
 
-function CompanyDialog({ company, onClose }: { company: CompanyRow; onClose: () => void }) {
+  const sources = (company.discovered_via ?? []).map((slug) => SOURCE_LABELS[slug] ?? slug);
+
   return (
-    <div
-      className="fixed inset-0 z-[80] grid place-items-center bg-background/80 p-5 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label={company.name}
-      onMouseDown={(e) => {
-        if (e.currentTarget === e.target) onClose();
-      }}
-    >
-      <article className="w-full max-w-xl rounded-3xl border border-border bg-card p-7 shadow-lift sm:p-9">
-        <div className="flex items-start justify-between gap-6">
-          <div className="flex items-center gap-5">
-            {company.logo_url ? (
-              <img src={company.logo_url} alt="" className="h-16 w-16 rounded-xl object-contain" />
-            ) : (
-              <span className="grid h-16 w-16 place-items-center rounded-2xl bg-secondary font-display text-2xl text-primary">
-                {company.name.slice(0, 2).toUpperCase()}
-              </span>
-            )}
-            <div>
-              <h2 className="text-3xl">{company.name}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {company.hq_location ?? "Dallas–Fort Worth"}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent"
-            aria-label="Close"
-          >
-            ✕
-          </button>
+    <article className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-soft transition-transform hover:-translate-y-1">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="text-2xl leading-snug">{company.name}</h3>
+          <span className="kicker mt-1 block text-muted-foreground">
+            {[
+              company.stage && company.stage !== "unknown" ? titleCase(company.stage) : null,
+              company.hq_location ?? "Location unknown",
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
         </div>
-        <p className="mt-7 leading-relaxed text-muted-foreground">
-          {company.one_liner ?? company.description ?? "Company information is coming soon."}
+        <span className="flex shrink-0 items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-medium">
+          <span
+            className={`h-2 w-2 rounded-full ${fresh.tone === "live" ? "animate-pulse" : ""} ${dot}`}
+          />
+          {fresh.label}
+        </span>
+      </div>
+
+      {/* Why we think this company is live — the reason the card exists. */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <SignalBadge signal={company.signal} />
+        {company.signal_detail && (
+          <span className="text-xs text-muted-foreground">{company.signal_detail}</span>
+        )}
+      </div>
+
+      {(company.one_liner ?? company.description) && (
+        <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">
+          {company.one_liner ?? company.description}
         </p>
-        <dl className="mt-7 grid grid-cols-2 gap-5 border-y border-border py-6 text-sm">
-          <div>
-            <dt className="text-muted-foreground">Industry</dt>
-            <dd className="mt-1 font-medium">{company.tags?.[0] ?? "—"}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Stage</dt>
-            <dd className="mt-1 font-medium">
-              {company.stage && company.stage !== "unknown" ? titleCase(company.stage) : "—"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Location</dt>
-            <dd className="mt-1 font-medium">{company.hq_location ?? "Dallas–Fort Worth"}</dd>
-          </div>
-        </dl>
+      )}
+
+      {company.tags?.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {company.tags.slice(0, 6).map((t) => (
+            <span
+              key={t}
+              className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {sources.length > 0 && (
+        <p className="mt-4 text-xs text-muted-foreground">
+          {/* Two independent directories agreeing is a meaningfully stronger
+              record than one, so say so rather than just listing them. */}
+          {sources.length > 1 ? "Confirmed by " : "Found via "}
+          {sources.join(", ")}
+        </p>
+      )}
+
+      <div className="mt-auto flex flex-wrap items-center gap-5 pt-5 text-sm">
         {company.website && (
           <a
             href={company.website}
             target="_blank"
             rel="noreferrer noopener"
-            className="mt-7 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground"
+            className="font-medium text-primary hover:underline"
           >
-            Visit website ↗
+            Website ↗
           </a>
         )}
-      </article>
-    </div>
+        <Link
+          to="/wiki/$entityType/$entityId"
+          params={{ entityType: "company", entityId: company.id }}
+          className="text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Suggest an edit
+        </Link>
+        {company.verified_by && (
+          <span className="ml-auto text-xs text-muted-foreground">✓ Owner verified</span>
+        )}
+      </div>
+    </article>
   );
 }
