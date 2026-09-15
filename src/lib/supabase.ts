@@ -10,7 +10,8 @@ const anonKey = import.meta.env["VITE_SUPABASE_ANON_KEY"];
  * companies / people, owner-scoped on profiles, insert-only on wiki_edits), so
  * the publishable key is safe to ship.
  */
-export const supabase = createClient<Database>(url ?? "", anonKey ?? "", {
+/** Placeholders keep createClient from throwing before the backend exists. */
+export const supabase = createClient<Database>(url || "http://localhost:54321", anonKey || "public-anon-key", {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
