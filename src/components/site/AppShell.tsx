@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { Moon, Sun } from "lucide-react";
 import logo from "@/assets/build-dallas-logo.png";
 
 export const NAV_TABS = [
@@ -8,6 +9,34 @@ export const NAV_TABS = [
   { to: "/resources", label: "Resources" },
   { to: "/events", label: "Events" },
 ] as const;
+
+function ThemeToggle() {
+  const [dark, setDark] = useState(true);
+
+  useEffect(() => {
+    setDark(document.documentElement.classList.contains("dark"));
+  }, []);
+
+  const toggleTheme = () => {
+    const nextDark = !dark;
+    document.documentElement.classList.toggle("dark", nextDark);
+    document.documentElement.style.colorScheme = nextDark ? "dark" : "light";
+    localStorage.setItem("build-dallas-theme", nextDark ? "dark" : "light");
+    setDark(nextDark);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-accent"
+      aria-label={`Switch to ${dark ? "light" : "dark"} mode`}
+      title={`Switch to ${dark ? "light" : "dark"} mode`}
+    >
+      {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </button>
+  );
+}
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -33,21 +62,24 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <Link
-          to="/get-connected"
-          className="hidden rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition hover:-translate-y-0.5 md:block"
-        >
-          Get Connected
-        </Link>
-        <button
-          type="button"
-          className="rounded-full border border-border px-4 py-2 text-sm md:hidden"
-          aria-label="Toggle navigation"
-          aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
-        >
-          Menu
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            to="/get-connected"
+            className="hidden rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition hover:-translate-y-0.5 md:block"
+          >
+            Get Connected
+          </Link>
+          <button
+            type="button"
+            className="rounded-full border border-border px-4 py-2 text-sm md:hidden"
+            aria-label="Toggle navigation"
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+          >
+            Menu
+          </button>
+        </div>
       </div>
       {open && (
         <nav
