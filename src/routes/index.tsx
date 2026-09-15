@@ -4,6 +4,11 @@ import { SiteFooter, SiteHeader } from "@/components/site/AppShell";
 import { supabase, supabaseConfigured } from "@/lib/supabase";
 import type { CompanyRow } from "@/lib/database.types";
 import logo from "@/assets/build-dallas-logo.png";
+import cometFoundryLogo from "@/assets/community/comet-foundry.jpg";
+import aitxLogo from "@/assets/community/aitx.jpg";
+import foundersPlazaLogo from "@/assets/community/founders-plaza.jpg";
+import nineKClubLogo from "@/assets/community/9k-club.jpg";
+import aiMarketingWorldLogo from "@/assets/community/ai-marketing-world.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -47,16 +52,17 @@ const partnerPlaceholders = [
   "Universities",
   "Investors",
 ];
-const communities = [
+const communities: Array<{ name: string; detail?: string; logo: string | null }> = [
   {
     name: "Claude Dallas",
     detail: "Dallas SIP and Claude + Dallas Claude Community",
+    logo: null,
   },
-  { name: "Comet Foundry" },
-  { name: "AITX" },
-  { name: "Founders Plaza" },
-  { name: "9K Club" },
-  { name: "AI Marketing World" },
+  { name: "Comet Foundry", logo: cometFoundryLogo },
+  { name: "AITX", logo: aitxLogo },
+  { name: "Founders Plaza", logo: foundersPlazaLogo },
+  { name: "9K Club", logo: nineKClubLogo },
+  { name: "AI Marketing World", logo: aiMarketingWorldLogo },
 ];
 const Arrow = () => (
   <span aria-hidden className="transition-transform group-hover:translate-x-1">
@@ -198,10 +204,23 @@ function HomePage() {
               {communities.map((community) => (
                 <div
                   key={community.name}
-                  className="flex min-h-28 items-center gap-4 rounded-2xl border border-border bg-background p-5"
+                  className="group flex min-h-32 items-center gap-5 rounded-2xl border border-border bg-background p-5 transition hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-soft"
                 >
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 font-display text-xl text-primary">
-                    {community.name.charAt(0)}
+                  <span className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border/70 bg-white p-2 shadow-sm dark:bg-white/[0.96]">
+                    {community.logo ? (
+                      <img
+                        src={community.logo}
+                        alt={`${community.name} logo`}
+                        className="h-full w-full rounded-lg object-contain"
+                      />
+                    ) : (
+                      <span
+                        aria-label="Claude logo"
+                        className="font-sans text-[3.1rem] font-semibold leading-none text-[#d97757]"
+                      >
+                        ✳
+                      </span>
+                    )}
                   </span>
                   <span>
                     <span className="block text-sm font-semibold">{community.name}</span>
@@ -254,12 +273,12 @@ function HomePage() {
               <div>
                 <span className="kicker text-primary">Founder support</span>
                 <h2 className="mt-4 text-4xl">Resources for builders</h2>
-                <p className="mt-5 max-w-2xl leading-relaxed text-muted-foreground">
+                <p className="mt-5 max-w-2xl leading-relaxed text-ink-foreground/70">
                   We're working with partners to aggregate and negotiate resources for startups
                   building in Dallas—including software, cloud infrastructure, professional
                   services, programs, workspace, and other founder benefits.
                 </p>
-                <p className="mt-3 text-sm text-muted-foreground">
+                <p className="mt-3 text-sm text-ink-foreground/60">
                   Looking for something specific? Tell us what you need and we'll see what we can
                   connect you with.
                 </p>

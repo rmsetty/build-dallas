@@ -33,7 +33,7 @@ function ThemeToggle() {
       aria-label={`Switch to ${dark ? "light" : "dark"} mode`}
       title={`Switch to ${dark ? "light" : "dark"} mode`}
     >
-      {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      {dark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
     </button>
   );
 }
