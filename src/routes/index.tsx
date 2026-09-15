@@ -52,17 +52,45 @@ const partnerPlaceholders = [
   "Universities",
   "Investors",
 ];
-const communities: Array<{ name: string; detail?: string; logo: string | null }> = [
+const communities: Array<{
+  name: string;
+  detail?: string;
+  description: string;
+  logo: string | null;
+}> = [
   {
     name: "Claude Dallas",
     detail: "Dallas SIP and Claude + Dallas Claude Community",
+    description:
+      "A local community for people building and exploring with Claude across Dallas–Fort Worth.",
     logo: null,
   },
-  { name: "Comet Foundry", logo: cometFoundryLogo },
-  { name: "AITX", logo: aitxLogo },
-  { name: "Founders Plaza", logo: foundersPlazaLogo },
-  { name: "9K Club", logo: nineKClubLogo },
-  { name: "AI Marketing World", logo: aiMarketingWorldLogo },
+  {
+    name: "Comet Foundry",
+    description:
+      "A builder community helping emerging founders turn ambitious ideas into companies.",
+    logo: cometFoundryLogo,
+  },
+  {
+    name: "AITX",
+    description: "A Texas community bringing together AI builders, founders, and operators.",
+    logo: aitxLogo,
+  },
+  {
+    name: "Founders Plaza",
+    description: "A gathering place for founders to meet, learn, and build alongside one another.",
+    logo: foundersPlazaLogo,
+  },
+  {
+    name: "9K Club",
+    description: "A community connecting ambitious founders, operators, and creators across DFW.",
+    logo: nineKClubLogo,
+  },
+  {
+    name: "AI Marketing World",
+    description: "A community focused on practical AI applications for marketing and growth.",
+    logo: aiMarketingWorldLogo,
+  },
 ];
 const Arrow = () => (
   <span aria-hidden className="transition-transform group-hover:translate-x-1">
@@ -200,35 +228,42 @@ function HomePage() {
           <div className="mx-auto max-w-6xl px-5 py-20">
             <span className="kicker text-primary">Community partners</span>
             <h2 className="mt-4 text-4xl">Communities building Dallas</h2>
-            <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
               {communities.map((community) => (
                 <div
                   key={community.name}
-                  className="group flex min-h-32 items-center gap-5 rounded-2xl border border-border bg-background p-5 transition hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-soft"
+                  className="group relative"
+                  tabIndex={0}
+                  aria-label={`${community.name}: ${community.description}`}
                 >
-                  <span className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border/70 bg-white p-2 shadow-sm dark:bg-white/[0.96]">
+                  <span className="grid aspect-square w-full place-items-center overflow-hidden rounded-2xl border border-border bg-white p-5 shadow-sm transition duration-200 group-hover:-translate-y-1 group-hover:border-primary/45 group-hover:shadow-soft group-focus:-translate-y-1 group-focus:border-primary/45 group-focus:outline-none group-focus:ring-2 group-focus:ring-primary/40 dark:bg-white/[0.96]">
                     {community.logo ? (
                       <img
                         src={community.logo}
                         alt={`${community.name} logo`}
-                        className="h-full w-full rounded-lg object-contain"
+                        className="h-full w-full rounded-xl object-contain"
                       />
                     ) : (
                       <span
                         aria-label="Claude logo"
-                        className="font-sans text-[3.1rem] font-semibold leading-none text-[#d97757]"
+                        className="font-sans text-7xl font-semibold leading-none text-[#d97757]"
                       >
                         ✳
                       </span>
                     )}
                   </span>
-                  <span>
-                    <span className="block text-sm font-semibold">{community.name}</span>
+                  <span className="pointer-events-none absolute left-1/2 top-full z-30 mt-3 w-64 -translate-x-1/2 translate-y-2 rounded-2xl border border-border bg-card p-4 text-left opacity-0 shadow-lift transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus:translate-y-0 group-focus:opacity-100">
+                    <span className="block text-sm font-semibold text-card-foreground">
+                      {community.name}
+                    </span>
                     {community.detail && (
-                      <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                      <span className="mt-1 block text-[0.7rem] font-medium text-primary">
                         {community.detail}
                       </span>
                     )}
+                    <span className="mt-2 block text-xs leading-relaxed text-muted-foreground">
+                      {community.description}
+                    </span>
                   </span>
                 </div>
               ))}
@@ -267,18 +302,18 @@ function HomePage() {
           </div>
         </section>
         <section className="mx-auto max-w-6xl px-5 pb-8">
-          <div className="surface-ink relative overflow-hidden rounded-3xl border border-primary/20 p-9 sm:p-12">
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-secondary p-9 text-foreground shadow-soft dark:border-primary/20 dark:bg-ink dark:text-ink-foreground sm:p-12">
             <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
             <div className="relative grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
               <div>
                 <span className="kicker text-primary">Founder support</span>
                 <h2 className="mt-4 text-4xl">Resources for builders</h2>
-                <p className="mt-5 max-w-2xl leading-relaxed text-ink-foreground/70">
+                <p className="mt-5 max-w-2xl leading-relaxed text-muted-foreground dark:text-ink-foreground/70">
                   We're working with partners to aggregate and negotiate resources for startups
                   building in Dallas—including software, cloud infrastructure, professional
                   services, programs, workspace, and other founder benefits.
                 </p>
-                <p className="mt-3 text-sm text-ink-foreground/60">
+                <p className="mt-3 text-sm text-muted-foreground dark:text-ink-foreground/60">
                   Looking for something specific? Tell us what you need and we'll see what we can
                   connect you with.
                 </p>
